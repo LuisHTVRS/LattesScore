@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>LattesScore — Medições de SLA</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+:root{font-family:system-ui,Arial,sans-serif;color:#172033;background:#f5f7fb}body{max-width:1200px;margin:32px auto;padding:0 20px}
+h1{margin-bottom:4px}.muted{color:#5d687b}.panel{background:white;border:1px solid #e1e6ef;border-radius:12px;padding:20px;margin:18px 0;box-shadow:0 2px 8px #1b2b4410}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}.metric{padding:14px;background:#f7f9fc;border-radius:8px}
+.metric b{font-size:24px;display:block}.chart{height:320px}.pending{border-left:5px solid #d18b19;padding:12px;background:#fff8e8}
+table{border-collapse:collapse;width:100%;font-size:14px}td,th{padding:10px;border-bottom:1px solid #e5e9f0;text-align:left}
+a{color:#2459a6}code{background:#eef1f6;padding:2px 5px;border-radius:4px}
+</style></head><body>
+<h1>MEDIÇÕES DO SLA — LattesScore</h1>
+<p class="muted">Painel gerado a partir dos arquivos JSON versionados no repositório. Latência em ms; vazão em req/s; concorrência em usuários virtuais (VU).</p>
+<div class="panel"><h2>Resumo das execuções existentes — cadastro de usuário</h2>
+<div id="cards" class="grid"></div>
+<p class="muted">Os arquivos disponíveis registram somente o endpoint POST /api/usuarios/registar. As quatro execuções são observações independentes, não uma única curva contínua.</p>
+<table id="summary"><thead><tr><th>Execução</th><th>VU máx.</th><th>Requisições</th><th>Latência média</th><th>p95</th><th>Vazão média</th><th>Status HTTP</th></tr></thead><tbody></tbody></table></div>
+<div class="panel"><h2>Latência média por janela de 5 segundos</h2><div class="chart"><canvas id="latency"></canvas></div></div>
+<div class="panel"><h2>Vazão por janela de 5 segundos</h2><div class="chart"><canvas id="throughput"></canvas></div></div>
+<div class="panel"><h2>Concorrência observada (VU médio por janela de 5 segundos)</h2><div class="chart"><canvas id="vus"></canvas></div></div>
+<div class="panel"><h2>Segundo serviço: importação de currículo Lattes</h2>
+<div class="pending"><b>Pendente de execução.</b> O ZIP original não contém resultados do endpoint <code>POST /api/lattes/importar</code>. Não há números apresentados aqui para esse serviço. O script e XML de teste estão preparados para executar e coletar dados reais.</div>
+<p>Implementação: <code>src/main/java/com/lattesscore/backend/controller/LattesController.java</code> → <code>AvaliacaoService.java</code> → <code>CouchDbService.java</code> → CouchDB.</p>
+<p>Comando: <code>k6 run -e BASE_URL=http://localhost:8080 k6/teste-importacao-lattes.js --summary-export=resultados-importacao-lattes.json</code></p></div>
+<div class="panel"><h2>Como interpretar / hipóteses de gargalo</h2>
+<ul>
+<li><b>Cadastro / MySQL:</b> <i>UsuarioRepository.save</i> gera INSERT com chave primária; possíveis gargalos: pool JDBC, latência/IO do MySQL, índice UNIQUE de email, contenção de escrita e custo de flush/transação.</li>
+<li><b>Importação / CouchDB:</b> o controlador lê todo o multipart em memória; o serviço cria um <code>RestTemplate</code> por requisição e envia o XML como JSON; possíveis gargalos: consumo de heap/GC em XMLs grandes, serialização JSON, conexões HTTP sem pool/reuso, latência/throughput do CouchDB e contenção de disco.</li>
+<li>As hipóteses precisam ser validadas com métricas de CPU, heap/GC, pool JDBC, slow query log, I/O e métricas do CouchDB. Latência isolada não prova qual componente é o gargalo.</li>
+</ul></div>
+<p class="muted">Fonte de dados: <code>resultado-carga.json</code>, <code>resultados-cadastro.json</code>, <code>resultados-cadastro-100.json</code> e <code>resultados-cadastro-200.json</code>. Atualize o painel após adicionar novas execuções ao repositório.</p>
+<script>
+fetch('./docs-sla-data.json').then(r=>r.json()).then(runs=>{
+ const fmt=n=>n.toLocaleString('pt-BR',{maximumFractionDigits:2});
+ document.querySelector('#cards').innerHTML=runs.map(r=>`<div class="metric"><span>${r.label}</span><b>${fmt(r.avg)} ms</b><small>média · p95 ${fmt(r.p95)} ms · ${r.vus} VUs</small></div>`).join('');
+ document.querySelector('#summary tbody').innerHTML=runs.map(r=>`<tr><td>${r.label}</td><td>${r.vus}</td><td>${fmt(r.count)}</td><td>${fmt(r.avg)} ms</td><td>${fmt(r.p95)} ms</td><td>${fmt(r.rps)} req/s</td><td>${JSON.stringify(r.success)}</td></tr>`).join('');
+ const colors=['#235789','#e07a27','#3a8f68','#8c62a8'];
+ function chart(id,key,label,ytitle){new Chart(document.getElementById(id),{type:'line',data:{labels:runs[0].labels,datasets:runs.map((r,i)=>({label:r.label,data:r[key],borderColor:colors[i],backgroundColor:colors[i],spanGaps:true,tension:.2,pointRadius:2}))},options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},scales:{x:{title:{display:true,text:'Tempo desde o início da execução'}},y:{title:{display:true,text:ytitle},beginAtZero:true}},plugins:{legend:{position:'bottom'}}}})}
+ chart('latency','latency','Latência','ms');chart('throughput','throughput','Vazão','req/s');chart('vus','vus_series','VU','usuários virtuais');
+});
+</script></body></html>
