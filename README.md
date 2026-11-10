@@ -1,12 +1,12 @@
 # LattesScore
 
-# MEDIÇÕES DO SLA — LattesScore
+## Medições do SLA
 
-## Painel visual
+### Painel visual
 
 Abra [`docs-sla.html`](docs-sla.html) no navegador para comparar as séries de latência, vazão e concorrência. O painel lê [`docs-sla-data.json`](docs-sla-data.json), gerado a partir dos JSONs k6 existentes. Para publicar como GitHub Pages, habilite Pages para a branch/pasta que contém esses arquivos; o endereço público depende do proprietário e do nome do repositório.
 
-## Serviço 1 — Cadastro de usuário
+### Serviço 1 — Cadastro de usuário
 
 - **Endpoint:** `POST /api/usuarios/registar`
 - **Operações:** inserção (INSERT) no MySQL.
@@ -21,7 +21,7 @@ Abra [`docs-sla.html`](docs-sla.html) no navegador para comparar as séries de l
 - **Data das medições:** 09/11/2026.
 - **Configuração do ambiente:** aplicação Spring Boot na porta 8080; banco MySQL configurado em `localhost:3306/lattesscore`; carga k6 direcionada a `localhost:8080`. **CPU, RAM, versões de MySQL/k6, sistema operacional, topologia/container e recursos alocados não estão documentados nos artefatos recebidos**.
 
-### Resultados disponíveis
+#### Resultados disponíveis
 
 Valores calculados dos pontos `http_req_duration` e `http_reqs` dos JSONs originais. Latência e p95 em ms; vazão média = número de requisições dividido pelo intervalo entre o primeiro e o último ponto de duração. VU máx. vem do `vus_max` do k6.
 
@@ -34,7 +34,7 @@ Valores calculados dos pontos `http_req_duration` e `http_reqs` dos JSONs origin
 
 **Atenção à interpretação:** as médias não crescem monotonicamente com VUs. Isso não demonstra que 200 VUs sejam mais eficientes ou que esse seja o limite sustentável: os ensaios podem ter sido executados em condições diferentes, os cenários usam `sleep(1)` e os resultados disponíveis não documentam recursos da máquina nem saturação. O pico de VUs configurado é uma concorrência aplicada, não o limite máximo comprovado do sistema. Os JSONs contêm séries temporais; o painel mostra evolução em janelas de 5 segundos.
 
-### Hipóteses de gargalo — cadastro
+#### Hipóteses de gargalo — cadastro
 
 1. **Pool de conexões JDBC:** sob concorrência, threads podem aguardar conexão com MySQL; validar métricas de conexões ativas/ociosas e tempo de espera.
 2. **MySQL / I/O / transações:** cada chamada persiste uma linha com `email` único e chave `IDENTITY`; índice único, escrita em disco, locks e flush podem elevar a latência.
@@ -43,7 +43,7 @@ Valores calculados dos pontos `http_req_duration` e `http_reqs` dos JSONs origin
 
 São hipóteses técnicas derivadas do caminho de execução, não gargalos comprovados pelas medições atuais.
 
-## Serviço 2 — Importação de currículo Lattes
+### Serviço 2 — Importação de currículo Lattes
 
 - **Endpoint:** `POST /api/lattes/importar` (multipart/form-data, campos `idLattes` e `file`).
 - **Operações:** inserção de documento no CouchDB.
@@ -58,7 +58,7 @@ São hipóteses técnicas derivadas do caminho de execução, não gargalos comp
 - **Data:** cenário preparado em 09/11/2026; **medição pendente**.
 - **Configuração:** Spring Boot na porta 8080 e CouchDB configurado em `127.0.0.1:5984`, banco `lattesscore_documentos`. O CouchDB precisa estar ativo e autenticado. Recursos de máquina/container não foram informados.
 
-### Execução para obter as medições
+#### Execução para obter as medições
 
 Na raiz do projeto, com aplicação, MySQL e CouchDB ativos:
 
@@ -68,7 +68,7 @@ k6 run -e BASE_URL=http://localhost:8080   k6/teste-importacao-lattes.js   --sum
 
 O cenário aplica rampas de 5, 10 e 20 VUs, registra `http_req_duration`, `http_reqs`, `vus`/`vus_max` e verifica HTTP 200. O threshold p95 de 1s é um critério inicial de teste, não um SLA já acordado. Após executar, adicionar `resultados-importacao-lattes.json` ao repositório e incluir a série no painel para comparação direta.
 
-### Hipóteses de gargalo — importação
+#### Hipóteses de gargalo — importação
 
 1. **Leitura do arquivo em memória:** `file.getBytes()` materializa o XML inteiro; arquivos grandes e várias importações simultâneas podem pressionar heap e GC.
 2. **Cliente HTTP por requisição:** `new RestTemplate()` é criado em cada chamada; investigar custo de criação e ausência de pool/reuso de conexões.
@@ -78,7 +78,7 @@ O cenário aplica rampas de 5, 10 e 20 VUs, registra `http_req_duration`, `http_
 
 Validar com métricas do CouchDB, latência HTTP entre serviços, heap/GC, CPU, disco e tamanho dos XMLs. A medição k6 deve usar o mesmo tamanho de arquivo e ambiente documentado em todas as comparações.
 
-## Reprodutibilidade e próximos passos
+### Reprodutibilidade e próximos passos
 
 1. Registrar SO, CPU, RAM, versões Java/Spring Boot/MySQL/CouchDB/k6, containers e limites de CPU/memória.
 2. Executar os dois serviços no mesmo ambiente e com dados de teste controlados.
@@ -86,6 +86,6 @@ Validar com métricas do CouchDB, latência HTTP entre serviços, heap/GC, CPU, 
 4. Comparar média, p95/p99, req/s, VUs, taxa de erro e recursos do servidor. O requisito pede latência média; p95 foi incluído como indicador complementar.
 5. Não interpretar VUs máximos do script como limite real: aumentar carga progressivamente até violação de latência/erro ou saturação de recursos.
 
-## Referências de implementação
+### Referências de implementação
 
 Os resultados do cadastro correspondem ao código atual. O script de importação foi adicionado para viabilizar a segunda medição, não para simular ou fabricar resultados.
