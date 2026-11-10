@@ -77,15 +77,3 @@ O cenário aplica rampas de 5, 10 e 20 VUs, registra `http_req_duration`, `http_
 5. **Timeouts e falhas externas:** não há configuração explícita de timeout no `RestTemplate`; indisponibilidade/lentidão do CouchDB pode ocupar threads do servidor.
 
 Validar com métricas do CouchDB, latência HTTP entre serviços, heap/GC, CPU, disco e tamanho dos XMLs. A medição k6 deve usar o mesmo tamanho de arquivo e ambiente documentado em todas as comparações.
-
-### Reprodutibilidade e próximos passos
-
-1. Registrar SO, CPU, RAM, versões Java/Spring Boot/MySQL/CouchDB/k6, containers e limites de CPU/memória.
-2. Executar os dois serviços no mesmo ambiente e com dados de teste controlados.
-3. Repetir cada perfil pelo menos três vezes; guardar JSON bruto e não sobrescrever execuções.
-4. Comparar média, p95/p99, req/s, VUs, taxa de erro e recursos do servidor. O requisito pede latência média; p95 foi incluído como indicador complementar.
-5. Não interpretar VUs máximos do script como limite real: aumentar carga progressivamente até violação de latência/erro ou saturação de recursos.
-
-### Referências de implementação
-
-Os resultados do cadastro correspondem ao código atual. O script de importação foi adicionado para viabilizar a segunda medição, não para simular ou fabricar resultados.
