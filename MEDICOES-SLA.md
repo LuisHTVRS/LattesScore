@@ -1,7 +1,5 @@
 # MEDIÇÕES DO SLA — LattesScore
 
-> **Estado:** o repositório recebido já contém medições reais do cadastro de usuários. O segundo serviço (importação de currículo Lattes) está instrumentado com um cenário k6 reproduzível, mas **ainda precisa ser executado** contra uma instância ativa com CouchDB. Não se devem tratar os dados ausentes como resultados.
-
 ## Painel visual
 
 Abra [`docs-sla.html`](docs-sla.html) no navegador para comparar as séries de latência, vazão e concorrência. O painel lê [`docs-sla-data.json`](docs-sla-data.json), gerado a partir dos JSONs k6 existentes. Para publicar como GitHub Pages, habilite Pages para a branch/pasta que contém esses arquivos; o endereço público depende do proprietário e do nome do repositório.
@@ -18,8 +16,8 @@ Abra [`docs-sla.html`](docs-sla.html) no navegador para comparar as séries de l
   - [`application.properties`](src/main/resources/application.properties)
 - **Código-fonte dos testes:** [`teste-cadastro.js`](k6/teste-cadastro.js), [`teste-cadastro-100.js`](k6/teste-cadastro-100.js), [`teste-cadastro-200.js`](k6/teste-cadastro-200.js).
 - **Resultados brutos:** [`resultado-carga.json`](resultado-carga.json), [`resultados-cadastro.json`](resultados-cadastro.json), [`resultados-cadastro-100.json`](resultados-cadastro-100.json), [`resultados-cadastro-200.json`](resultados-cadastro-200.json).
-- **Data das medições:** 09/11/2026 (timestamp dos arquivos JSON).
-- **Configuração do ambiente:** aplicação Spring Boot na porta 8080; banco MySQL configurado em `localhost:3306/lattesscore`; carga k6 direcionada a `localhost:8080`. **CPU, RAM, versões de MySQL/k6, sistema operacional, topologia/container e recursos alocados não estão documentados nos artefatos recebidos**, portanto devem ser preenchidos antes de uma comparação científica/reprodutível.
+- **Data das medições:** 09/11/2026.
+- **Configuração do ambiente:** aplicação Spring Boot na porta 8080; banco MySQL configurado em `localhost:3306/lattesscore`; carga k6 direcionada a `localhost:8080`. **CPU, RAM, versões de MySQL/k6, sistema operacional, topologia/container e recursos alocados não estão documentados nos artefatos recebidos**.
 
 ### Resultados disponíveis
 
